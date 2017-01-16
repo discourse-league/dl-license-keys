@@ -51,14 +51,16 @@ after_initialize do
 
         users.each do |user|
           @licenses.each do |license|
-            license_user = DlLicenseKeys::LicenseUser.find_by(user_id: user.id, license_id: license.id)
-            if license_user.blank?
-              key = SecureRandom.hex(32)
-              new_license_user = DlLicenseKeys::LicenseUser.new(enabled: true, user_id: user.id, license_id: license.id, key: key)
-              new_license_user.save
-            else
-              license_user.enabled = true
-              license_user.save
+            if license.enabled
+              license_user = DlLicenseKeys::LicenseUser.find_by(user_id: user.id, license_id: license.id)
+              if license_user.blank?
+                key = SecureRandom.hex(32)
+                new_license_user = DlLicenseKeys::LicenseUser.new(enabled: true, user_id: user.id, license_id: license.id, key: key)
+                new_license_user.save
+              else
+                license_user.enabled = true
+                license_user.save
+              end
             end
           end
         end
@@ -84,10 +86,12 @@ after_initialize do
         raise Discourse::NotFound unless user
 
         @licenses.each do |license|
-          license_user = DlLicenseKeys::LicenseUser.find_by(user_id: user.id, license_id: license.id)
-          if !license_user.blank?
-            license_user.enabled = false
-            license_user.save
+          if license.enabled
+            license_user = DlLicenseKeys::LicenseUser.find_by(user_id: user.id, license_id: license.id)
+            if !license_user.blank?
+              license_user.enabled = false
+              license_user.save
+            end
           end
         end
 
