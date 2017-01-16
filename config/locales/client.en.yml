@@ -1,0 +1,9 @@
+en:
+  js:
+    admin:
+      license_keys:
+        index: "All"
+        enabled: "Enabled"
+        disabled: "Disabled"
+    license_keys:
+      title: "Licenses"

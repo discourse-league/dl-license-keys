@@ -1,0 +1,3 @@
+en:
+  site_settings: 
+    dl_license_keys_enabled: "Enable License Keys at /admin/plugins/licenses"
