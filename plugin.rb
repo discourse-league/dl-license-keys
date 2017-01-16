@@ -25,14 +25,75 @@ after_initialize do
   require_dependency 'groups_controller'
   class ::GroupsController
 
-    after_filter :update_license_keys, only: [:add_members, :remove_member]
+    after_filter :generate_license_keys, only: [:add_members]
+    after_filter :disable_license_keys, only: [:remove_member]
 
-    def update_license_keys
-      licenses = DlLicenseKeys::License.find_by_group_id(params[:id])
-      if !licenses.blank?
-        byebug
+    private
+
+    def generate_license_keys
+      @licenses = DlLicenseKeys::License.where(group_id: params[:id])
+      if !@licenses.blank?
+
+        users =
+          if params[:usernames].present?
+            User.where(username: params[:usernames].split(","))
+          elsif params[:user_ids].present?
+            User.find(params[:user_ids].split(","))
+          elsif params[:user_emails].present?
+            User.where(email: params[:user_emails].split(","))
+          else
+            raise Discourse::InvalidParameters.new(
+              'user_ids or usernames or user_emails must be present'
+            )
+          end
+
+        raise Discourse::NotFound if users.blank?
+
+        users.each do |user|
+          @licenses.each do |license|
+            license_user = DlLicenseKeys::LicenseUser.find_by(user_id: user.id, license_id: license.id)
+            if license_user.blank?
+              key = SecureRandom.hex(32)
+              new_license_user = DlLicenseKeys::LicenseUser.new(enabled: true, user_id: user.id, license_id: license.id, key: key)
+              new_license_user.save
+            else
+              license_user.enabled = true
+              license_user.save
+            end
+          end
+        end
+
+      end
+
+    end
+
+    def disable_license_keys
+      @licenses = DlLicenseKeys::License.where(group_id: params[:id])
+      if !@licenses.blank?
+        user =
+          if params[:user_id].present?
+            User.find_by(id: params[:user_id])
+          elsif params[:username].present?
+            User.find_by_username(params[:username])
+          elsif params[:user_email].present?
+            User.find_by_email(params[:user_email])
+          else
+            raise Discourse::InvalidParameters.new('user_id or username must be present')
+          end
+
+        raise Discourse::NotFound unless user
+
+        @licenses.each do |license|
+          license_user = DlLicenseKeys::LicenseUser.find_by(user_id: user.id, license_id: license.id)
+          if !license_user.blank?
+            license_user.enabled = false
+            license_user.save
+          end
+        end
+
       end
     end
+
   end
 
 end
