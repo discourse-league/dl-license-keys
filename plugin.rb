@@ -16,6 +16,7 @@ Discourse::Application.routes.append do
   get '/admin/plugins/licenses/enabled' => 'admin/plugins#index', constraints: StaffConstraint.new
   get '/admin/plugins/licenses/disabled' => 'admin/plugins#index', constraints: StaffConstraint.new
   get '/admin/plugins/licenses/unused' => 'admin/plugins#index', constraints: StaffConstraint.new
+  get "users/:username/licenses" => "users#show", constraints: {username: USERNAME_ROUTE_FORMAT}
 end
 
 load File.expand_path('../lib/dl_license_keys/engine.rb', __FILE__)

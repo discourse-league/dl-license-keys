@@ -1,5 +1,6 @@
 module ::DlLicenseKeys
 	class License < ActiveRecord::Base
+		has_one :group
 	end
 end
 
