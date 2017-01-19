@@ -1,8 +1,8 @@
-import LicensesProduct from '../models/licenses-product';
+import LicenseUsers from '../models/license-users';
 
 export default Discourse.Route.extend({
   model() {
-    return LicensesProduct.findAll();
+    return LicenseUsers.findAll(this.modelFor("user").id);
   },
 
   setupController(controller, model) {

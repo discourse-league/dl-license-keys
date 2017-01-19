@@ -1,5 +1,6 @@
 module ::DlLicenseKeys
 	class LicenseUserSite < ActiveRecord::Base
+		belongs_to :license_user
 	end
 end
 

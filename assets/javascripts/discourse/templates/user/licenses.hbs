@@ -1,1 +1,14 @@
 <div>got it</div>
+<ul>
+{{#each model as |license|}}
+  <li>{{license.license.product_name}} - {{license.key}} - {{license.enabled}}</li>
+{{/each}}
+</ul>
+<h1>hello</h1>
+<ul>
+{{#each model as |license|}}
+  {{#each license.sites as |site|}}
+    <li>{{license.license.product_name}} - {{site.site_url}} - {{license.enabled}}</li>
+  {{/each}}  
+{{/each}}
+</ul>

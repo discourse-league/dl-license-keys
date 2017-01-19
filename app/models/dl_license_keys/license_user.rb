@@ -1,7 +1,9 @@
 module ::DlLicenseKeys
 	class LicenseUser < ActiveRecord::Base
-		has_one :user
-		has_one :license
+		belongs_to :user
+		belongs_to :license
+
+		has_many :license_user_sites
 	end
 end
 
