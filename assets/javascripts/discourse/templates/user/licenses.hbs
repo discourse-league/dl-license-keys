@@ -1,12 +1,4 @@
-{{#if model.error}}
-<div class="item error">
-  {{#if model.forbidden}}
-    {{i18n 'errors.reasons.forbidden'}}
-  {{else}}
-    {{i18n 'errors.desc.unknown'}}
-  {{/if}}
-</div>
-{{else}}
+{{#conditional-loading-spinner condition=model.loading}}
 <div class="admin-contents user-licenses">
   <div class="dashboard-left">
     <div class="dashboard-stats">
@@ -51,4 +43,4 @@
     </div>
   </div>
 </div>
-{{/if}}
+{{/conditional-loading-spinner}}

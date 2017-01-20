@@ -17,6 +17,8 @@ Discourse::Application.routes.append do
   get '/admin/plugins/licenses/disabled' => 'admin/plugins#index', constraints: StaffConstraint.new
   get '/admin/plugins/licenses/unused' => 'admin/plugins#index', constraints: StaffConstraint.new
   get "users/:username/licenses" => "users#show", constraints: {username: USERNAME_ROUTE_FORMAT}
+  get '/licenses/license/users/all' => 'dl_license_keys/license_users#all_licenses', constraints: AdminConstraint.new
+  put '/licenses/license/users/all' => 'dl_license_keys/license_users#update', constraints: AdminConstraint.new
 end
 
 load File.expand_path('../lib/dl_license_keys/engine.rb', __FILE__)
@@ -55,7 +57,15 @@ after_initialize do
             if license.enabled
               license_user = DlLicenseKeys::LicenseUser.find_by(user_id: user.id, license_id: license.id)
               if license_user.blank?
+
                 key = SecureRandom.hex(16)
+                collision = DlLicenseKeys::LicenseUser.find_by_key(key)
+
+                until collison.nil?
+                  key = SecureRandom.hex(16)
+                  collision = DlLicenseKeys::LicenseUser.find_by_key(key)
+                end
+
                 new_license_user = DlLicenseKeys::LicenseUser.new(enabled: true, user_id: user.id, license_id: license.id, key: key)
                 new_license_user.save
               else
