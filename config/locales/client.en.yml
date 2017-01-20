@@ -14,3 +14,6 @@ en:
           delete_confirm: "Delete this product?"
     license_keys:
       title: "Licenses"
+      product: "Product"
+      license_key: "License Key"
+      site: "Site"

@@ -45,24 +45,7 @@ LicenseUsers.reopenClass({
     });
     console.log(licenseUsers);
     return licenseUsers;
-  },
-  findSites: function(user_id) {
-    var userSites = LicensesUsers.create({ content: [], loading: true });
-    ajax(`/licenses/sites/users/${user_id}`).then(function(sites) {
-      if (sites){
-        _.each(sites, function(site){
-            userSites.pushObject(LicenseUsers.create({
-            id: site.id,
-            enabled: site.enabled,
-            product_name: site.product_name,
-            key: site.key
-          }));
-        });
-      };
-      userSites.set('loading', false);
-    });
-    return userSites;
-  },
+  }
 });
 
 export default LicenseUsers;

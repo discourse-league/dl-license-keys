@@ -55,7 +55,7 @@ after_initialize do
             if license.enabled
               license_user = DlLicenseKeys::LicenseUser.find_by(user_id: user.id, license_id: license.id)
               if license_user.blank?
-                key = SecureRandom.hex(32)
+                key = SecureRandom.hex(16)
                 new_license_user = DlLicenseKeys::LicenseUser.new(enabled: true, user_id: user.id, license_id: license.id, key: key)
                 new_license_user.save
               else
