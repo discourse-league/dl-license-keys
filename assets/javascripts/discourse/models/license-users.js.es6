@@ -43,7 +43,6 @@ LicenseUsers.reopenClass({
       };
       licenseUsers.set('loading', false);
     });
-    console.log(licenseUsers);
     return licenseUsers;
   }
 });

@@ -6,6 +6,11 @@ export default Discourse.Route.extend({
   },
 
   setupController(controller, model) {
-    controller.setProperties({ model });
+  	if (this.currentUser.id !== this.modelFor("user").id){
+  		this.replaceWith('userActivity');
+  	}
+  	else{
+	    controller.setProperties({ model });
+	};
   }
 });
