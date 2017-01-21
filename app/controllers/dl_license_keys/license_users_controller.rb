@@ -4,6 +4,8 @@ module DlLicenseKeys
 
     before_filter :fetch_license_user, only: [:show]
 
+    skip_before_filter :check_xhr, only: [:validate]
+
     def show
       render_json_dump(serialize_data(@license_user, LicenseUserSerializer))
     end
@@ -20,6 +22,16 @@ module DlLicenseKeys
         license_user.save
       end
       render_json_dump(license_user)
+    end
+
+    def validate
+      license = LicenseUser.find_by(license_id: params[:id], key: params[:key])
+      if license
+        Jobs.enqueue(:log_site_license_validation, {license_user_id: license.id, site_url: request.env['HTTP_REFERER']})
+        render_json_dump({:enabled => license.enabled, :license_id => license.license_id, :key => license.key})
+      else
+        render_json_error(license)
+      end
     end
 
     private

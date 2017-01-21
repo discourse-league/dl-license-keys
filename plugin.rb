@@ -111,4 +111,19 @@ after_initialize do
 
   end
 
+  require_dependency "jobs/base"
+  module ::Jobs
+
+    class LogSiteLicenseValidation < Jobs::Base
+      def execute(args)
+        if args[:license_user_id] && args[:site_url] && DlLicenseKeys::LicenseUser.find(args[:license_user_id])
+          site = DlLicenseKeys::LicenseUserSite.find_by(license_user_id: args[:license_user_id], site_url: args[:site_url])
+          if !site
+            DlLicenseKeys::LicenseUserSite.create({:license_user_id => args[:license_user_id], :site_url => args[:site_url]})
+          end
+        end
+      end
+    end
+  end
+
 end
