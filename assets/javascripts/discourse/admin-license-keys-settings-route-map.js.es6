@@ -3,7 +3,7 @@ export default {
   path: '/licenses',
   map() {
   	this.route('products', {path: '/'});
-  	this.route('all');
+  	this.route('find');
   	this.route('enabled');
   	this.route('disabled');
   	this.route('unused');

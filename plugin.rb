@@ -12,7 +12,7 @@ register_asset "stylesheets/dl-license-keys.scss"
 
 Discourse::Application.routes.append do
   get '/admin/plugins/licenses' => 'admin/plugins#index', constraints: StaffConstraint.new
-  get '/admin/plugins/licenses/all' => 'admin/plugins#index', constraints: StaffConstraint.new
+  get '/admin/plugins/licenses/find' => 'admin/plugins#index', constraints: StaffConstraint.new
   get '/admin/plugins/licenses/enabled' => 'admin/plugins#index', constraints: StaffConstraint.new
   get '/admin/plugins/licenses/disabled' => 'admin/plugins#index', constraints: StaffConstraint.new
   get '/admin/plugins/licenses/unused' => 'admin/plugins#index', constraints: StaffConstraint.new

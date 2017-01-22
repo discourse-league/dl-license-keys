@@ -18,10 +18,9 @@ var LicenseItems = Ember.ArrayProxy.extend({
 
 Licenses.reopenClass({
   findAll: function(params) {
-    console.log(params);
-    var licenseItems = LicenseItems.create({ content: [], loading: true });
+    var licenseItems = LicenseItems.create({ content: [], loading: true, query: params.q });
     ajax("/licenses/license/users/all", {
-      data: { order: params.order, desc: params.desc } ,
+      data: { q: params.q } ,
       type: 'GET',
       dataType: 'json',
       contentType: 'application/json'
@@ -44,7 +43,6 @@ Licenses.reopenClass({
   },
 
   save: function(license){
-    console.log(license);
     return ajax("/licenses/license/users/all", {
       data: JSON.stringify({"license_user": license}),
       type: 'PUT',

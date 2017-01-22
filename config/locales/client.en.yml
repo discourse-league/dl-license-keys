@@ -3,7 +3,7 @@ en:
     admin:
       license_keys:
         index: "Products"
-        all: "All Keys"
+        find: "Find Users"
         enabled: "Enabled Keys"
         disabled: "Disabled Keys"
         unused: "Unused Keys"

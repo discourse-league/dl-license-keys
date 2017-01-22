@@ -1,0 +1,41 @@
+<div class="user-licenses">
+  <div class="search-menu">
+    {{text-field id="search-term" class="style-name" value=model.query placeholder="search usernames" action="newSearch"}}
+  </div>
+  {{#conditional-loading-spinner condition=model.loading}}
+  <div class="admin-contents">
+    <div class="dashboard-stats">
+      <table class="table table-condensed table-hover">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th title="Product" class="title">{{i18n 'license_keys.product'}}</th>
+            <th>Sites</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+        {{#each model as |license|}}
+          <tr>
+            <td>{{#link-to 'adminUser' license.user.id license.user.username }}{{avatar license.user imageSize="small"}} {{license.user.username}}{{/link-to}}</td>
+            <td><span>{{#if license.enabled }}<i class="fa fa-check-circle"></i>{{else}}<i class="fa fa-times-circle"></i>{{/if}}</span> {{license.license.product_name}}</td>
+            <td>{{license.sites.length}}</td>
+            <td>{{license.license.created_at}}</td>
+            <td>
+              <button {{action "toggleEnabled" license}} class="btn">
+                {{#if license.enabled}}
+                  {{i18n 'disable'}}
+                {{else}}
+                  {{i18n 'enable'}}
+                {{/if}}
+              </button>
+            </td>
+          </tr>
+        {{/each}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {{/conditional-loading-spinner}}
+</div>

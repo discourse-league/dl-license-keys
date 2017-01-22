@@ -11,7 +11,17 @@ module DlLicenseKeys
     end
 
     def all_licenses
-      all_licenses = serialize_data(LicenseUser.all.sort, LicenseUserSerializer)
+      all_licenses = {}
+      
+      if params[:q]
+        query = params[:q]
+        users = User.where("username LIKE ?", "%#{query}%").pluck(:id)
+        if users
+          licenses = LicenseUser.where(user_id: users).sort
+          all_licenses = serialize_data(licenses, LicenseUserSerializer)
+        end
+      end
+
       render_json_dump(all_licenses)
     end
 
