@@ -61,7 +61,7 @@ after_initialize do
                 key = SecureRandom.hex(16)
                 collision = DlLicenseKeys::LicenseUser.find_by_key(key)
 
-                until collison.nil?
+                until collision.nil?
                   key = SecureRandom.hex(16)
                   collision = DlLicenseKeys::LicenseUser.find_by_key(key)
                 end
