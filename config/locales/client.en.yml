@@ -9,6 +9,7 @@ en:
         unused: "Unused Keys"
         products:
           title: "Products"
+          id: "ID"
           no_products: "No Products Available"
           new_name: "New Product"
           delete_confirm: "Delete this product?"
