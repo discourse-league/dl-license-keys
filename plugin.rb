@@ -85,7 +85,6 @@ after_initialize do
     class SendNewKeyMessage < Jobs::Base
       def execute(args)
         params = args[:params]
-        byebug
 
         licenses = DlLicenseKeys::License.where(group_id: params[:id])
         if !licenses.blank?
