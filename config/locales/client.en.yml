@@ -1,4 +1,7 @@
 en:
+  license_keys:
+    new_key_title: "New license key for %{productName}!"
+    new_key_body: "You can find your new key over on [your user profile](/users/%{username}/licenses). Enjoy!"
   js:
     admin:
       license_keys:

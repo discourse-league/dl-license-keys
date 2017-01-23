@@ -67,7 +67,17 @@ after_initialize do
                 end
 
                 new_license_user = DlLicenseKeys::LicenseUser.new(enabled: true, user_id: user.id, license_id: license.id, key: key)
-                new_license_user.save
+                if new_license_user.save
+                  product = DlLicenseKeys::License.find(license.id)
+                  PostCreator.create(
+                    Discourse.system_user,
+                    target_usernames: user.username,
+                    archetype: Archetype.private_message,
+                    subtype: TopicSubtype.system_message,
+                    title: I18n.t('license_keys.new_key_title', {productName: product.product_name}),
+                    raw: I18n.t('license_keys.new_key_body', {username: user.username})
+                  )
+                end
               else
                 license_user.enabled = true
                 license_user.save

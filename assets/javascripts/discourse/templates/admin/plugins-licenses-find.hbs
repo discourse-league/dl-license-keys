@@ -21,7 +21,7 @@
             <td>{{#link-to 'adminUser' license.user.id license.user.username }}{{avatar license.user imageSize="small"}} {{license.user.username}}{{/link-to}}</td>
             <td><span>{{#if license.enabled }}<i class="fa fa-check-circle"></i>{{else}}<i class="fa fa-times-circle"></i>{{/if}}</span> {{license.license.product_name}}</td>
             <td>{{license.sites.length}}</td>
-            <td>{{license.license.created_at}}</td>
+            <td>{{format-date license.license.created_at}}</td>
             <td>
               <button {{action "toggleEnabled" license}} class="btn">
                 {{#if license.enabled}}
