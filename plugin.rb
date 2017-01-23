@@ -34,60 +34,7 @@ after_initialize do
     private
 
     def generate_license_keys
-      @licenses = DlLicenseKeys::License.where(group_id: params[:id])
-      if !@licenses.blank?
-
-        users =
-          if params[:usernames].present?
-            User.where(username: params[:usernames].split(","))
-          elsif params[:user_ids].present?
-            User.find(params[:user_ids].split(","))
-          elsif params[:user_emails].present?
-            User.where(email: params[:user_emails].split(","))
-          else
-            raise Discourse::InvalidParameters.new(
-              'user_ids or usernames or user_emails must be present'
-            )
-          end
-
-        raise Discourse::NotFound if users.blank?
-
-        users.each do |user|
-          @licenses.each do |license|
-            if license.enabled
-              license_user = DlLicenseKeys::LicenseUser.find_by(user_id: user.id, license_id: license.id)
-              if license_user.blank?
-
-                key = SecureRandom.hex(16)
-                collision = DlLicenseKeys::LicenseUser.find_by_key(key)
-
-                until collision.nil?
-                  key = SecureRandom.hex(16)
-                  collision = DlLicenseKeys::LicenseUser.find_by_key(key)
-                end
-
-                new_license_user = DlLicenseKeys::LicenseUser.new(enabled: true, user_id: user.id, license_id: license.id, key: key)
-                if new_license_user.save
-                  product = DlLicenseKeys::License.find(license.id)
-                  PostCreator.create(
-                    Discourse.system_user,
-                    target_usernames: user.username,
-                    archetype: Archetype.private_message,
-                    subtype: TopicSubtype.system_message,
-                    title: I18n.t('license_keys.new_key_title', {productName: product.product_name}),
-                    raw: I18n.t('license_keys.new_key_body', {username: user.username})
-                  )
-                end
-              else
-                license_user.enabled = true
-                license_user.save
-              end
-            end
-          end
-        end
-
-      end
-
+        Jobs.enqueue(:send_new_key_message, {params: params})
     end
 
     def disable_license_keys
@@ -134,6 +81,69 @@ after_initialize do
         end
       end
     end
+
+    class SendNewKeyMessage < Jobs::Base
+      def execute(args)
+        params = args[:params]
+        byebug
+
+        licenses = DlLicenseKeys::License.where(group_id: params[:id])
+        if !licenses.blank?
+
+          users =
+            if params[:usernames].present?
+              User.where(username: params[:usernames].split(","))
+            elsif params[:user_ids].present?
+              User.find(params[:user_ids].split(","))
+            elsif params[:user_emails].present?
+              User.where(email: params[:user_emails].split(","))
+            else
+              raise Discourse::InvalidParameters.new(
+                'user_ids or usernames or user_emails must be present'
+              )
+            end
+
+          users.each do |user|
+            licenses.each do |license|
+
+              if license.enabled
+                license_user = DlLicenseKeys::LicenseUser.find_by(user_id: user.id, license_id: license.id)
+                if license_user.blank?
+
+                  key = SecureRandom.hex(16)
+                  collision = DlLicenseKeys::LicenseUser.find_by_key(key)
+
+                  until collision.nil?
+                    key = SecureRandom.hex(16)
+                    collision = DlLicenseKeys::LicenseUser.find_by_key(key)
+                  end
+
+                  new_license_user = DlLicenseKeys::LicenseUser.new(enabled: true, user_id: user.id, license_id: license.id, key: key)
+                  if new_license_user.save
+                    product = DlLicenseKeys::License.find(license.id)
+                    PostCreator.create(
+                      Discourse.system_user,
+                      target_usernames: user.username,
+                      archetype: Archetype.private_message,
+                      subtype: TopicSubtype.system_message,
+                      title: I18n.t('license_keys.new_key_title', {productName: product.product_name}),
+                      raw: I18n.t('license_keys.new_key_body', {username: user.username})
+                    )
+                  end
+                else
+                  license_user.enabled = true
+                  license_user.save
+                end
+              end
+
+            end
+          end
+
+        end
+
+      end
+    end
+
   end
 
 end
