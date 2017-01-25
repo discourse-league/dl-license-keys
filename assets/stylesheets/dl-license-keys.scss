@@ -7,3 +7,37 @@
 .user-licenses .fa-times-circle {
     color: red;
 }
+.license-keys{
+	.help{
+    color: #919191;
+    padding-top: 3px;
+    font-size: 85%;
+    line-height: 1.4em;
+    margin: 0px;
+    font-weight: normal;
+  }
+}
+.nav-pills > span > li {
+    float: left;
+    margin-right: 5px;
+}
+.nav-pills > span > li > a {
+    border: none;
+    padding: 5px 12px;
+    color: #222222;
+    font-size: 1.143em;
+    line-height: 20px;
+    transition: background .15s;
+}
+.nav-pills > span > li > a {
+    display: block;
+    text-decoration: none;
+}
+.nav-pills > span > li > a:hover {
+    color: #e45735;
+    background-color: #f7cdc2;
+}
+.nav-pills > span > li > a.active {
+    color: white;
+    background-color: #e45735;
+}

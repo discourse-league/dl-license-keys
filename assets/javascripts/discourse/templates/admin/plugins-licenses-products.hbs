@@ -38,12 +38,15 @@
         {{#if selectedItem.id}}
         <div>
           <label>{{i18n 'admin.license_keys.products.id'}}: {{ selectedItem.id }}</label>
+          <p class="help">{{i18n 'admin.license_keys.products.id_description'}}</p>
         </div>
         {{/if}}
         <div>
           {{combo-box content=customGroups valueAttribute="id" value=selectedItem.group_id none="admin.groups.bulk_select"}}
+          <p class="help">{{i18n 'admin.license_keys.products.group_description'}}</p>
         </div>
         </form>
+        <p></p>
     </div>
     {{/if}}
   </div>
