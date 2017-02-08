@@ -38,8 +38,8 @@ after_initialize do
     end
 
     def disable_license_keys
-      @licenses = DlLicenseKeys::License.where(group_id: params[:id])
-      if !@licenses.blank?
+      licenses = PluginStore.get("dl_license_keys", "licenses").select{|license| license[:group_id] = params[:id]}
+      if !licenses.blank?
         user =
           if params[:user_id].present?
             User.find_by(id: params[:user_id])
@@ -53,12 +53,20 @@ after_initialize do
 
         raise Discourse::NotFound unless user
 
-        @licenses.each do |license|
-          if license.enabled
-            license_user = DlLicenseKeys::LicenseUser.find_by(user_id: user.id, license_id: license.id)
-            if !license_user.blank?
-              license_user.enabled = false
-              license_user.save
+        licenses.each do |license|
+          if license[:enabled]
+            license_users = PluginStore.get("dl_license_keys", "license_users")
+
+            if license_users.nil?
+              license_users = []
+              license_user = nil
+            else
+              license_user = license_users.select{|license_user| license_user[:user_id] == user.id && license_user[:license_id] == license[:id]} if !license_users.blank?
+            end
+
+            if !license_user.nil?
+              license_user[0][:enabled] = false
+              PluginStore.set("dl_license_keys", "license_users", license_users)
             end
           end
         end
@@ -86,7 +94,8 @@ after_initialize do
       def execute(args)
         params = args[:params]
 
-        licenses = DlLicenseKeys::License.where(group_id: params[:id])
+        licenses = PluginStore.get("dl_license_keys", "licenses").select{|license| license[:group_id] = params[:id]}
+        
         if !licenses.blank?
 
           users =
@@ -105,33 +114,47 @@ after_initialize do
           users.each do |user|
             licenses.each do |license|
 
-              if license.enabled
-                license_user = DlLicenseKeys::LicenseUser.find_by(user_id: user.id, license_id: license.id)
-                if license_user.blank?
+              if license[:enabled]
+                license_users = PluginStore.get("dl_license_keys", "license_users")
+                if license_users.nil?
+                  license_users = []
+                  license_user = nil
+                else
+                  license_user = license_users.select{|license_user| license_user[:user_id] == user.id && license_user[:license_id] == license[:id]} if !license_users.blank?
+                end
+                
+                if license_user.nil?
 
                   key = SecureRandom.hex(16)
-                  collision = DlLicenseKeys::LicenseUser.find_by_key(key)
+                  collision = license_users.select{|license_user| license_user[:key] == key} if !license_users.empty?
 
                   until collision.nil?
                     key = SecureRandom.hex(16)
-                    collision = DlLicenseKeys::LicenseUser.find_by_key(key)
+                    collision = license_users.select{|license_user| license_user[:key] == key}
                   end
 
-                  new_license_user = DlLicenseKeys::LicenseUser.new(enabled: true, user_id: user.id, license_id: license.id, key: key)
-                  if new_license_user.save
-                    product = DlLicenseKeys::License.find(license.id)
-                    PostCreator.create(
-                      Discourse.system_user,
-                      target_usernames: user.username,
-                      archetype: Archetype.private_message,
-                      subtype: TopicSubtype.system_message,
-                      title: I18n.t('license_keys.new_key_title', {productName: product.product_name}),
-                      raw: I18n.t('license_keys.new_key_body', {username: user.username})
-                    )
-                  end
+                  new_license_user = {
+                    enabled: true, 
+                    user_id: user.id, 
+                    license_id: license[:id], 
+                    key: key
+                  }
+
+                  license_users.push(new_license_user)
+
+                  PluginStore.set("dl_license_keys", "license_users", license_users)
+
+                  PostCreator.create(
+                    Discourse.system_user,
+                    target_usernames: user.username,
+                    archetype: Archetype.private_message,
+                    subtype: TopicSubtype.system_message,
+                    title: I18n.t('license_keys.new_key_title', {productName: license[:product_name]}),
+                    raw: I18n.t('license_keys.new_key_body', {username: user.username})
+                  )
                 else
-                  license_user.enabled = true
-                  license_user.save
+                  license_user[0][:enabled] = true
+                  PluginStore.set("dl_license_keys", "license_users", license_users)
                 end
               end
 
