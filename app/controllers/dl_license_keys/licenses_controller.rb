@@ -57,7 +57,7 @@ module DlLicenseKeys
     def show
       licenses = PluginStore.get("dl_license_keys", "licenses")
       licenses = [] if licenses.nil?
-      render_json_dump(licenses.compact)
+      render_json_dump(licenses)
     end
 
     def all

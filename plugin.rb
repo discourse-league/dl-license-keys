@@ -141,7 +141,7 @@ after_initialize do
 
                 if license_users.nil?
                   license_users = []
-                  license_user = nil
+                  license_user = []
                 else
                   license_user = license_users.select{|license_user| license_user[:user_id] == user.id && license_user[:license_id] == license[:id]}
                   
