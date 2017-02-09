@@ -2,23 +2,37 @@ module DlLicenseKeys
   class LicenseUsersController < ApplicationController
     requires_plugin 'dl-license-keys'
 
-    before_filter :fetch_license_user, only: [:show]
-
     skip_before_filter :check_xhr, only: [:validate]
 
     def show
-      render_json_dump(serialize_data(@license_user, LicenseUserSerializer))
+      license_users = PluginStore.get("dl_license_keys", "license_users")
+
+      if license_users.nil?
+        user_licenses = []
+      else
+        user_licenses = license_users.select{|license_user| license_user[:user_id] == params[:user_id].to_i}
+        user_licenses = user_licenses.flatten.map{|license| LicenseUser.new(license)} if !user_licenses.empty?
+      end
+
+      render_json_dump(serialize_data(user_licenses, LicenseUserSerializer))
     end
 
     def all_licenses
       all_licenses = {}
-      
+
       if params[:q]
         query = params[:q]
         users = User.where("username LIKE ?", "%#{query}%").pluck(:id)
         if users
-          licenses = LicenseUser.where(user_id: users).sort
-          all_licenses = serialize_data(licenses, LicenseUserSerializer)
+          license_users = PluginStore.get("dl_license_keys", "license_users")
+          if license_users.nil?
+            all_licenses = []
+          else
+            licenses = license_users.select{|license_user| users.include?(license_user[:user_id])}
+            licenses = licenses.flatten.map{|license| LicenseUser.new(license)} if !licenses.empty?
+
+            all_licenses = serialize_data(licenses, LicenseUserSerializer)
+          end
         end
       end
 
@@ -26,29 +40,34 @@ module DlLicenseKeys
     end
 
     def update
-      license_user = LicenseUser.find(params[:license_user][:id])
-      if license_user
-        license_user.enabled = params[:license_user][:enabled] if !params[:license_user][:enabled].nil?
-        license_user.save
+      license_users = PluginStore.get("dl_license_keys", "license_users")
+      if license_users.nil?
+        license_user = nil
+      else
+        license_user = license_users.select{|license_user| license_user[:user_id] == params[:license_user][:user][:id] && license_user[:license_id] == params[:license_user][:license][:id]} if !license_users.blank?
       end
-      render_json_dump(license_user)
+
+      if !license_user.nil?
+        license_user[0][:enabled] = params[:license_user][:enabled] if !params[:license_user][:enabled].nil?
+        PluginStore.set("dl_license_keys", "license_users", license_users)
+      end
+
+      render_json_dump(license_user[0])
     end
 
     def validate
-      license = LicenseUser.find_by(license_id: params[:id], key: params[:key])
-      if license
-        Jobs.enqueue(:log_site_license_validation, {license_user_id: license.id, site_url: request.env['HTTP_REFERER']})
-        render_json_dump({:enabled => license.enabled, :license_id => license.license_id, :key => license.key})
+      license_users = PluginStore.get("dl_license_keys", "license_users")
+      license = license_users.select{|license_user| license_user[:license_id] == params[:id].to_i && license_user[:key] == params[:key]} if !license_users.blank?
+      
+      if !license.empty?
+        Jobs.enqueue(:log_site_license_validation, {license_user_id: license[0][:id], site_url: request.env['HTTP_REFERER']})
+        render_json_dump({:enabled => license[0][:enabled], :license_id => license[0][:license_id], :key => license[0][:key]})
       else
         render_json_error(license)
       end
     end
 
     private
-
-    def fetch_license_user
-      @license_user = LicenseUser.where(user_id: params[:user_id]).sort
-    end
 
     def license_params
       params.permit(license_user: [:enabled, :user_id, :license_id, :key])[:license_user]

@@ -33,7 +33,8 @@ Licenses.reopenClass({
             enabled: license.enabled,
             license: license.license,
             sites: license.sites,
-            key: license.key
+            key: license.key,
+            created_at: license.created_at
           }));
         });
       };

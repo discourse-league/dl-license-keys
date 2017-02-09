@@ -1,20 +1,17 @@
 module ::DlLicenseKeys
-	class LicenseUser < ActiveRecord::Base
-		belongs_to :user
-		belongs_to :license
+	class LicenseUser
+    alias :read_attribute_for_serialization :send
 
-		has_many :license_user_sites
+    attr_accessor :id, :enabled, :user_id, :license_id, :key, :created_at
+
+    def initialize(opts={})
+      @id = opts[:id]
+      @enabled = opts[:enabled]
+      @user_id = opts[:user_id]
+      @license_id = opts[:license_id]
+      @key = opts[:key]
+      @created_at = opts[:created_at]
+    end
+
 	end
 end
-
-# == Schema Information
-#
-# Table name: dl_license_keys_license_users
-#
-#  id                :integer          not null, primary key
-#  enabled           :boolean          default(FALSE)
-#  user_id           :integer          not null
-#  license_id        :integer          not null
-#  key               :string           not null
-#  created_at        :datetime         not null
-#  updated_at        :datetime         not null

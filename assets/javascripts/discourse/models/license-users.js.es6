@@ -30,6 +30,7 @@ LicenseUsers.reopenClass({
   findAll: function(user_id) {
     var licenseUsers = LicensesUsers.create({ content: [], loading: true });
     ajax(`/licenses/license/users/${user_id}`).then(function(licenses) {
+      console.log(licenses);
       if (licenses){
         _.each(licenses, function(license){
             licenseUsers.pushObject(LicenseUsers.create({

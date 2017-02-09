@@ -81,10 +81,31 @@ after_initialize do
 
     class LogSiteLicenseValidation < Jobs::Base
       def execute(args)
-        if args[:license_user_id] && args[:site_url] && DlLicenseKeys::LicenseUser.find(args[:license_user_id])
-          site = DlLicenseKeys::LicenseUserSite.find_by(license_user_id: args[:license_user_id], site_url: args[:site_url])
-          if !site
-            DlLicenseKeys::LicenseUserSite.create({:license_user_id => args[:license_user_id], :site_url => args[:site_url]})
+        if (args[:license_user_id] && args[:site_url])
+          license_user_sites = PluginStore.get("dl_license_keys", "license_user_sites")
+          if license_user_sites.nil?
+            license_user_sites = []
+            site = []
+          else
+            site = license_user_sites.select{|site| site[:license_user_id] == args[:license_user_id] && site[:site_url] == args[:site_url]}
+          end
+
+          if site.nil?
+            id = SecureRandom.random_number(1000000)
+
+            until license_user_sites.select{|site| site[:id] == id}.empty?
+              id = SecureRandom.random_number(1000000)
+            end
+
+            new_site = {
+              id: id,
+              license_user_id: args[:license_user_id],
+              site_url: args[:site_url]
+            }
+
+            license_user_sites.push(new_site)
+            
+            PluginStore.set("dl_license_keys", "license_user_sites", license_user_sites)
           end
         end
       end
@@ -116,28 +137,38 @@ after_initialize do
 
               if license[:enabled]
                 license_users = PluginStore.get("dl_license_keys", "license_users")
+                id = SecureRandom.random_number(1000000)
+
                 if license_users.nil?
                   license_users = []
                   license_user = nil
                 else
-                  license_user = license_users.select{|license_user| license_user[:user_id] == user.id && license_user[:license_id] == license[:id]} if !license_users.blank?
+                  license_user = license_users.select{|license_user| license_user[:user_id] == user.id && license_user[:license_id] == license[:id]}
+                  
+                  until license_users.select{|license_user| license_user[:id] == id}.empty?
+                    id = SecureRandom.random_number(1000000)
+                  end
                 end
                 
-                if license_user.nil?
+                if license_user.empty?
 
                   key = SecureRandom.hex(16)
-                  collision = license_users.select{|license_user| license_user[:key] == key} if !license_users.empty?
+                  collision = license_users.select{|license_user| license_user[:key] == key}
 
-                  until collision.nil?
+                  until collision.empty?
                     key = SecureRandom.hex(16)
                     collision = license_users.select{|license_user| license_user[:key] == key}
                   end
 
+                  time = Time.now
+
                   new_license_user = {
+                    id: id,
                     enabled: true, 
                     user_id: user.id, 
                     license_id: license[:id], 
-                    key: key
+                    key: key,
+                    created_at: time
                   }
 
                   license_users.push(new_license_user)
