@@ -1,1 +1,3 @@
-{{#link-to 'user.licenses'}}{{fa-icon "key"}}{{i18n 'license_keys.title'}}{{/link-to}}
+{{#if (license-viewing-self model)}}
+  {{#link-to 'user.licenses'}}{{fa-icon "key"}}{{i18n 'license_keys.title'}}{{/link-to}}
+{{/if}}
