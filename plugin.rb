@@ -25,53 +25,15 @@ load File.expand_path('../lib/dl_license_keys/engine.rb', __FILE__)
 
 after_initialize do
 
-  require_dependency 'groups_controller'
-  class ::GroupsController
+  require_dependency 'group'
+  class ::Group
 
-    after_filter :generate_license_keys, only: [:add_members]
-    after_filter :disable_license_keys, only: [:remove_member]
+    after_save :update_license_keys
 
-    private
+    protected
 
-    def generate_license_keys
-        Jobs.enqueue(:send_new_key_message, {params: params})
-    end
-
-    def disable_license_keys
-      licenses = PluginStore.get("dl_license_keys", "licenses").select{|license| license[:group_id] = params[:id]}
-      if !licenses.blank?
-        user =
-          if params[:user_id].present?
-            User.find_by(id: params[:user_id])
-          elsif params[:username].present?
-            User.find_by_username(params[:username])
-          elsif params[:user_email].present?
-            User.find_by_email(params[:user_email])
-          else
-            raise Discourse::InvalidParameters.new('user_id or username must be present')
-          end
-
-        raise Discourse::NotFound unless user
-
-        licenses.each do |license|
-          if license[:enabled]
-            license_users = PluginStore.get("dl_license_keys", "license_users")
-
-            if license_users.nil?
-              license_users = []
-              license_user = nil
-            else
-              license_user = license_users.select{|license_user| license_user[:user_id] == user.id && license_user[:license_id] == license[:id]} if !license_users.blank?
-            end
-
-            if !license_user.nil?
-              license_user[0][:enabled] = false
-              PluginStore.set("dl_license_keys", "license_users", license_users)
-            end
-          end
-        end
-
-      end
+    def update_license_keys
+      Jobs.enqueue(:update_license_keys, {group_id: self.id})
     end
 
   end
@@ -111,61 +73,46 @@ after_initialize do
       end
     end
 
-    class SendNewKeyMessage < Jobs::Base
+    class UpdateLicenseKeys < Jobs::Base
       def execute(args)
-        params = args[:params]
+        group = Group.find(args[:group_id])
 
-        licenses = PluginStore.get("dl_license_keys", "licenses").select{|license| license[:group_id] = params[:id]}
+        licenses = PluginStore.get("dl_license_keys", "licenses").select{|license| license[:group_id] = group.id} || []
         
         if !licenses.blank?
 
-          users =
-            if params[:usernames].present?
-              User.where(username: params[:usernames].split(","))
-            elsif params[:user_ids].present?
-              User.find(params[:user_ids].split(","))
-            elsif params[:user_emails].present?
-              User.where(email: params[:user_emails].split(","))
-            else
-              raise Discourse::InvalidParameters.new(
-                'user_ids or usernames or user_emails must be present'
-              )
+          users = group.users
+          license_users = PluginStore.get("dl_license_keys", "license_users") || []
+
+          id = SecureRandom.random_number(1000000)
+          key = SecureRandom.hex(16)
+          if !license_users.empty?
+            until license_users.select{|license_user| license_user[:id] == id}.empty?
+              id = SecureRandom.random_number(1000000)
             end
+            until license_users.select{|license_user| license_user[:key] == key}.empty?
+              key = SecureRandom.hex(16)
+            end
+          end
 
-          users.each do |user|
-            licenses.each do |license|
+          time = Time.now
 
-              if license[:enabled]
-                license_users = PluginStore.get("dl_license_keys", "license_users")
-                id = SecureRandom.random_number(1000000)
+          licenses.each do |license|
+            if license[:enabled]
+              filtered_license_users = license_users.select{|license_user| license_user[:license_id] == license[:id]}
+              license_users_ids = filtered_license_users.collect{|lu| lu[:user_id]}
+              new_users = group.users.where.not(id: license_users_ids) || []
+              disabled_users = filtered_license_users.select{|license_user| users.exclude?(license_user[:user_id])}
+              existing_users = group.users.where(id: license_users_ids) || []
 
-                if license_users.nil?
-                  license_users = []
-                  license_user = []
-                else
-                  license_user = license_users.select{|license_user| license_user[:user_id] == user.id && license_user[:license_id] == license[:id]}
-                  
-                  until license_users.select{|license_user| license_user[:id] == id}.empty?
-                    id = SecureRandom.random_number(1000000)
-                  end
-                end
-                
+              new_users.each do |new_user|
+                license_user = filtered_license_users.select{|license_user| license_user[:user_id] == new_user.id}
+
                 if license_user.empty?
-
-                  key = SecureRandom.hex(16)
-                  collision = license_users.select{|license_user| license_user[:key] == key}
-
-                  until collision.empty?
-                    key = SecureRandom.hex(16)
-                    collision = license_users.select{|license_user| license_user[:key] == key}
-                  end
-
-                  time = Time.now
-
                   new_license_user = {
                     id: id,
                     enabled: true, 
-                    user_id: user.id, 
+                    user_id: new_user.id, 
                     license_id: license[:id], 
                     key: key,
                     created_at: time
@@ -177,16 +124,30 @@ after_initialize do
 
                   PostCreator.create(
                     Discourse.system_user,
-                    target_usernames: user.username,
+                    target_usernames: new_user.username,
                     archetype: Archetype.private_message,
                     subtype: TopicSubtype.system_message,
                     title: I18n.t('license_keys.new_key_title', {productName: license[:product_name]}),
-                    raw: I18n.t('license_keys.new_key_body', {username: user.username})
+                    raw: I18n.t('license_keys.new_key_body', {username: new_user.username})
                   )
                 else
                   license_user[0][:enabled] = true
                   PluginStore.set("dl_license_keys", "license_users", license_users)
                 end
+              end
+
+              disabled_users.each do |disabled_user|
+                license_user = filtered_license_users.select{|license_user| license_user[:user_id] == disabled_user[:user_id]}
+                if !license_user.empty?
+                  license_user[0][:enabled] = false
+                  PluginStore.set("dl_license_keys", "license_users", license_users)
+                end
+              end
+
+              existing_users.each do |existing_user|
+                license_user = filtered_license_users.select{|license_user| license_user[:user_id] == existing_user.id}
+                license_user[0][:enabled] = true
+                PluginStore.set("dl_license_keys", "license_users", license_users)
               end
 
             end
