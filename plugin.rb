@@ -52,7 +52,7 @@ after_initialize do
             site = license_user_sites.select{|site| site[:license_user_id] == args[:license_user_id] && site[:site_url] == args[:site_url]}
           end
 
-          if site.nil?
+          if site.empty?
             id = SecureRandom.random_number(1000000)
 
             until license_user_sites.select{|site| site[:id] == id}.empty?
