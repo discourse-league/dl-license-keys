@@ -25,7 +25,7 @@ module ::DlLicenseKeys
         license_users_ids = license_users.collect{|l| l[:id]}
         license_user_sites = PluginStore.get("dl_license_keys", "license_user_sites")
 
-        if license_users.nil? || license_user_sites.empty?
+        if license_users.nil? || license_user_sites.nil?
           return []
         else
           license_user_sites = license_user_sites.select{|site| license_users_ids.include?(site[:license_user_id])}
