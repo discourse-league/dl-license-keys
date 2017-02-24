@@ -77,8 +77,8 @@ after_initialize do
       def execute(args)
         group = Group.find(args[:group_id])
 
-        licenses = PluginStore.get("dl_license_keys", "licenses").select{|license| license[:group_id] == group.id} || []
-        
+        licenses = PluginStore.get("dl_license_keys", "licenses").select{|license| license[:group_id].to_i == group.id} || []
+
         if !licenses.blank?
 
           users = group.users
