@@ -79,7 +79,7 @@ after_initialize do
 
         licenses = PluginStore.get("dl_license_keys", "licenses").select{|license| license[:group_id].to_i == group.id} || []
 
-        if !licenses.blank?
+        if !licenses.empty?
 
           users = group.users
           license_users = PluginStore.get("dl_license_keys", "license_users") || []
