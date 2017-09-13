@@ -56,7 +56,6 @@ module DlLicenseKeys
     end
 
     def validate
-      byebug
       license_users = PluginStore.get("dl_license_keys", "license_users")
       license = license_users.select{|license_user| license_user[:license_id] == params[:id].to_i && license_user[:key] == params[:key]} if !license_users.blank?
 
