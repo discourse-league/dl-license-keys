@@ -2,7 +2,7 @@ module DlLicenseKeys
   class LicenseUsersController < ApplicationController
     requires_plugin 'dl-license-keys'
 
-    skip_before_filter :check_xhr, only: [:validate]
+    skip_before_filter :check_xhr, :preload_json, :verify_authenticity_token only: [:validate]
 
     def show
       license_users = PluginStore.get("dl_license_keys", "license_users")
@@ -64,7 +64,7 @@ module DlLicenseKeys
       end
       
       if !license.empty?
-        referer = request.env['HTTP_REFERER']
+        referer = request.headers['HTTP_REFERER']
         Jobs.enqueue(:log_site_license_validation, {license_user_id: license[0][:id], site_url: referer})
         render_json_dump({:enabled => license[0][:enabled], :license_id => license[0][:license_id], :key => license[0][:key]})
       else
