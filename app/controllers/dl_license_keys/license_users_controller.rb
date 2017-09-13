@@ -56,6 +56,7 @@ module DlLicenseKeys
     end
 
     def validate
+      byebug
       license_users = PluginStore.get("dl_license_keys", "license_users")
       license = license_users.select{|license_user| license_user[:license_id] == params[:id].to_i && license_user[:key] == params[:key]} if !license_users.blank?
 
@@ -64,7 +65,7 @@ module DlLicenseKeys
       end
       
       if !license.empty?
-        Jobs.enqueue(:log_site_license_validation, {license_user_id: license[0][:id], site_url: "#{request.base_url}"})
+        Jobs.enqueue(:log_site_license_validation, {license_user_id: license[0][:id], site_url: "#{request.referrer}"})
         render_json_dump({:enabled => license[0][:enabled], :license_id => license[0][:license_id], :key => license[0][:key]})
       else
         render_json_error(license)
