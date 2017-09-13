@@ -17,6 +17,7 @@ Discourse::Application.routes.append do
   get '/admin/plugins/licenses/disabled' => 'admin/plugins#index', constraints: StaffConstraint.new
   get '/admin/plugins/licenses/unused' => 'admin/plugins#index', constraints: StaffConstraint.new
   get "users/:username/licenses" => "users#show", constraints: {username: USERNAME_ROUTE_FORMAT}
+  get "u/:username/licenses" => "users#show", constraints: {username: USERNAME_ROUTE_FORMAT}
   get '/licenses/license/users/all' => 'dl_license_keys/license_users#all_licenses', constraints: AdminConstraint.new
   put '/licenses/license/users/all' => 'dl_license_keys/license_users#update', constraints: AdminConstraint.new
 end
