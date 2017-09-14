@@ -17,21 +17,8 @@ module ::DlLicenseKeys
     end
 
     def sites
-      license_users = PluginStore.get("dl_license_keys", "license_users")
-      if license_users.nil?
-        return []
-      else
-        license_users = license_users.select{|license_user| license_user[:user_id] == object.user_id}
-        license_users_ids = license_users.collect{|l| l[:id]}
-        license_user_sites = PluginStore.get("dl_license_keys", "license_user_sites")
-
-        if license_users.nil? || license_user_sites.nil?
-          return []
-        else
-          license_user_sites = license_user_sites.select{|site| license_users_ids.include?(site[:license_user_id])}
-          return license_user_sites
-        end
-      end
+      license_user_sites = PluginStore.get("dl_license_keys", "license_user_sites") || []
+      license_user_sites = license_user_sites.select{|site| object.id == site[:license_user_id]}
     end
 
     def site_count
