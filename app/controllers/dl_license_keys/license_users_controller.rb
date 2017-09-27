@@ -3,7 +3,7 @@ module DlLicenseKeys
   class LicenseUsersController < ApplicationController
     requires_plugin 'dl-license-keys'
 
-    skip_before_filter :check_xhr, only: [:validate]
+    skip_before_action :check_xhr, only: [:validate]
 
     def show
       license_users = PluginStore.get("dl_license_keys", "license_users")
