@@ -76,9 +76,14 @@ after_initialize do
 
     class UpdateLicenseKeys < Jobs::Base
       def execute(args)
-        group = Group.find(args[:group_id])
+        group = Group.find(args[:group_id]) || nil
 
-        licenses = PluginStore.get("dl_license_keys", "licenses").select{|license| license[:group_id].to_i == group.id} || []
+        if group.nil?
+          licenses = []
+        else
+          licenses = PluginStore.get("dl_license_keys", "licenses") || []
+          licenses = licenses.select{|license| license[:group_id].to_i == group.id} || []
+        end
 
         if !licenses.empty?
 
